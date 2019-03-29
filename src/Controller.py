@@ -12,6 +12,7 @@ class Controller:
         "a", "b", "x", "y"
     ]
     websocket = None
+    eventLoop = None
 
     def __init__(self):
         self.events = event_emitter.EventEmitter()
@@ -30,17 +31,18 @@ class Controller:
 
             elif parsedBody["t"] == "input":
                 # filter double input (right game pad)                
-                if (parsedBody["d"][0] in self.ignoredInputType) == False:
-                    self.events.emit('controller_input', data=parsedBody["d"])      
+                # if (parsedBody["d"][0] in self.ignoredInputType) == False:
+                self.events.emit('controller_input', inputType=parsedBody["i"], data=parsedBody["d"])
     
     def startNodeJs(self):
         subprocess.Popen(["node", "dualshock.js"])    
 
-    async def setLed(self, r, g, b):
-        await self.websocket.send(json.dumps({'t': 'led', 'd': [r, g, b]}))
+    def setLed(self, r, g, b):
+        asyncio.ensure_future(self.websocket.send(json.dumps({'t': 'led', 'd': [r, g, b]})))
                                 
     def startServer(self):
         print('dualshock: socket server started')
-        # self.startNodeJs()
-        asyncio.get_event_loop().run_until_complete(websockets.serve(self.serverLoop, self.websocketHost, self.websocketPort))
-        asyncio.get_event_loop().run_forever()
+        self.startNodeJs()
+        self.eventLoop = asyncio.get_event_loop()
+        self.eventLoop.run_until_complete(websockets.serve(self.serverLoop, self.websocketHost, self.websocketPort))
+        self.eventLoop.run_forever()

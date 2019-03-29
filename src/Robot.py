@@ -2,7 +2,7 @@ import Adafruit_PCA9685
 import time
 import pypot.dynamixel
 import pypot.robot
-from Controller import Controller
+from . Controller import Controller
 
 class Robot:
 
@@ -38,11 +38,13 @@ class Robot:
 
     minSpeed = 25
 
+    currentSpeed = 25
+
     armConfig = {
         'controllers': {
             'my_dxl_controller': {
                 'sync_read': False,
-                'attached_motors': ['base', 'pince'],
+                'attached_motors': ['base', 'claw'],
                 'port': '/dev/ttyUSB0'
             }
         },
@@ -92,13 +94,19 @@ class Robot:
             'greatDispenser': [2, -29],
             'greatDispenserMiddle': [-50, 2, 52],
             'upRight': [-60, -27],
-            'upGauche': [65, -22],
+            'upLeft': [65, -22],
             'pushGoldenium': [0, 0, 0]
         },
         'claw': {
             'opened': [89, 89],
-            'closed': [97, 97]
+            'closed': [97, 97],
+            'large': [40, 40]
         }
+    }
+
+    pistonStatus = {
+        'left': False,
+        'right': False
     }
 
     def __init__(self):
@@ -107,6 +115,7 @@ class Robot:
         self.controller = Controller()
 
     def initEsc(self, slot):
+        print(slot)
         self.servo.set_pwm(slot, 0, 307) #307 est le signal neutre sous 50 Hz (1.5 / 20 x 4096 = 307)
         time.sleep(1)
     
@@ -125,14 +134,16 @@ class Robot:
     # id (left or right)
     def togglePiston(self, id):        
         if self.pistonPositions[id]['current'] == self.pistonPositions[id]['init']:
+            self.pistonStatus[id] = True
             self.pistonPositions[id]['current'] = self.pistonPositions[id]['push']
         else:
+            self.pistonStatus[id] = False
             self.pistonPositions[id]['current'] = self.pistonPositions[id]['init']
         self.servo.set_pwm(self.pistonSlots[id], 0, self.pistonPositions[id]['current'])
 
-    def emergencyStop(self):
+    def stopAll(self):
         for slot in self.escSlots:
-            self.servo.set_pwm(slot, 0, self.convertSpeedToEsc(0))
+            self.servo.set_pwm(self.escSlots[slot], 0, self.convertSpeedToEsc(0))
 
     def northTranslation(self, speed):
         a = self.convertSpeedToEsc(speed)
@@ -246,15 +257,92 @@ class Robot:
     
     def onControllerDetected(self, controller):
         print("A new controller was detected")
-        print(controller)
-        # do stuff...
+        self.controller.setLed(0, 255, 0)
 
     def onControllerDisconnected(self):
         print("Controller disconnected")
-        # do stuff...
 
-    def onControllerInput(self, data):
-        print(data)
+    def onControllerInput(self, inputType, data):
+        if inputType == "digital":
+            if data['left']:
+                self.togglePiston('left')
+                self.controller.setLed(255, 50, 50)
+            if data['right']:
+                self.controller.setLed(50, 50, 255)
+                self.togglePiston('right')
+            if data['triangle']:
+                self.armBaseGoTo(self.armPositions['base']['up'], v = 70)
+            if data['circle']:
+                self.armBaseGoTo(self.armPositions['base']['upRight'], v = 70)
+            if data['square']:
+                self.armBaseGoTo(self.armPositions['base']['upLeft'], v = 70)
+            if data['cross']:
+                self.armBaseGoTo(self.armPositions['base']['greatDispenser'], v = 70)
+            if data['start']:
+                self.armClawGoTo(self.armPositions['claw']['large'], v = 70)
+            if data['l1']:
+                self.armClawGoTo(self.armPositions['claw']['opened'], v = 70)
+            if data['r1']:
+                self.armClawGoTo(self.armPositions['claw']['closed'], v = 70)
+            # if data['up']:
+            #     # self.moveClaw(2)
+            #     # self.raiseArm(30)
+            # if data['down']:
+            #     # self.moveClaw(-2)
+            #     # self.lowerArm(20)
+            if data['ps']:
+                self.stopAll()
+        if inputType == "analog":
+            seuil = 0
+
+            agx = data['lStickX']
+            agy = -data['lStickY']
+            adx = data['rStickX']
+            ady = -data['rStickY']
+            al2 = data['l2'] #accélération
+            ar2 = data['r2'] #accélération
+            
+            if (abs(adx) <= seuil and 
+                abs(ady) <= seuil and 
+                abs(agx) <= seuil and 
+                abs(agy) <= seuil and
+                (abs(al2+1) <= seuil or
+                abs(al2) <= seuil) and
+                (abs(ar2+1) <= seuil or 
+                abs(ar2)<=seuil)):
+                self.stopAll()
+            else:
+                if al2 == -1:
+                    self.currentSpeed = self.minSpeed
+                elif al2 != 0 :
+                    self.currentSpeed = self.mappyt(al2, -1, 1, 0, 1) * 100
+                    #print("al2 = {0} et vt = {1}".format(al2,vt))
+                if ady < 0.5 * adx and ady >= -0.5 * adx:
+                    self.eastTranslation(self.currentSpeed)
+                if ady > 0.5 * adx and ady <= 2 * adx:
+                    self.northEastTranslation(self.currentSpeed)
+                if ady > 2 * adx and ady >= -2 * adx:
+                    #print("ordre recu !")
+                    self.northTranslation(self.currentSpeed)
+                if ady < -2* adx and ady >= -0.5 * adx:
+                    self.northWestTranslation(self.currentSpeed)
+                if ady < -0.5 * adx and ady >= 0.5 * adx:
+                    self.westTranslation(self.currentSpeed)
+                if ady < 0.5 * adx and ady >= 2 * adx:
+                    self.southWestTranslation(self.currentSpeed)
+                if ady < 2 * adx and ady <= -2 * adx:
+                    self.southTranslation(self.currentSpeed)
+                if ady > -2 * adx and ady <= -0.5 * adx:
+                    self.southEastTranslation(self.currentSpeed)
+                if agy > 2 * agx and agy >= -2 * agx: #Lève le bras, stick gauche en haut
+                    self.raiseArm(30)
+                if agy < 2 * agx and agy <= -2 * agx: #Baisse le bras, stick gauche en bas                
+                    self.lowerArm(20)
+                if agy < 0.5 * agx and agy >= -0.5 * agx:
+                    self.clockwiseRotation(self.currentSpeed)
+                if agy < -0.5 * agx and agy >= 0.5 * agx:
+                    self.antiClockwiseRotation(self.currentSpeed)
+        
         # do stuff...
 
     def startControllerService(self):
@@ -267,15 +355,27 @@ class Robot:
         self.controller.startServer()
         
     def init(self):
+        print('Init....')
+
         # Init of all the esc
         for esc in self.escSlots:
-            self.initEsc(esc)
+            print('Init', esc)
+            self.initEsc(self.escSlots[esc])
+
+        print('Esc successfuly initialized')
 
         self.initServoPiston()
 
+        print('Pistons successfuly initialized')
+
         self.initArm()
 
-        self.armBaseGoTo(self.armPositions['base']['middle'])
+        print('Arm successfuly initialized')
+
+        self.armBaseGoTo(self.armPositions['base']['down'])
         self.armClawGoTo(self.armPositions['claw']['opened'], v = 70)
 
+        # print('Starting controller service...')
+
         self.startControllerService()
+
