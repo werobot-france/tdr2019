@@ -80,7 +80,7 @@ ws.on('open', function open() {
                     r2: this.analog.r2
                 }
                 if (JSON.stringify(analogRaw) != analog) {
-                    analog = JSON.stringify(this.analog)
+                    analog = JSON.stringify(analogRaw)
                     ws.send(JSON.stringify({
                         t: 'input',
                         i: 'analog',

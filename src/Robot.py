@@ -310,42 +310,44 @@ class Robot:
                 abs(lStickY) <= seuil and 
                 abs(lStickX) <= seuil and 
                 abs(lStickY) <= seuil and
-                (abs(l2+1) <= seuil or
-                abs(l2) <= seuil) and
-                (abs(r2+1) <= seuil or 
-                abs(r2)<=seuil)):
+                (abs(l2+1) <= seuil or abs(l2) <= seuil) and
+                (abs(r2+1) <= seuil or abs(r2) <= seuil)):
                 self.stopAll()
             else:
-                if lStickX == -1:
-                    self.currentSpeed = self.minSpeed
-                elif lStickX != 0 :
-                    self.currentSpeed = self.mappyt(lStickX, -1, 1, 0, 1) * 100
-                    #print("lStickX = {0} et vt = {1}".format(lStickX,vt))
-                if rStickY < 0.5 * lStickX and rStickY >= -0.5 * lStickX:
+                # if lStickX == -1:
+                #     self.currentSpeed = self.minSpeed
+                # elif lStickX != 0 :
+                #     self.currentSpeed = self.mappyt(lStickX, -1, 1, 0, 1) * 100
+                #     #print("lStickX = {0} et vt = {1}".format(lStickX,vt))
+              
+                # r stick ?              
+                if rStickY < 0.5 * rStickX and rStickY >= -0.5 * rStickX:
                     self.eastTranslation(self.currentSpeed)
-                if rStickY > 0.5 * lStickX and rStickY <= 2 * lStickX:
+                if rStickY > 0.5 * rStickX and rStickY <= 2 * rStickX:
                     self.northEastTranslation(self.currentSpeed)
-                if rStickY > 2 * lStickX and rStickY >= -2 * lStickX:
+                if rStickY > 2 * rStickX and rStickY >= -2 * rStickX:
                     #print("ordre recu !")
                     self.northTranslation(self.currentSpeed)
-                if rStickY < -2* lStickX and rStickY >= -0.5 * lStickX:
+                if rStickY < -2 * rStickX and rStickY >= -0.5 * rStickX:
                     self.northWestTranslation(self.currentSpeed)
-                if rStickY < -0.5 * lStickX and rStickY >= 0.5 * lStickX:
+                if rStickY < -0.5 * rStickX and rStickY >= 0.5 * rStickX:
                     self.westTranslation(self.currentSpeed)
-                if rStickY < 0.5 * lStickX and rStickY >= 2 * lStickX:
+                if rStickY < 0.5 * rStickX and rStickY >= 2 * rStickX:
                     self.southWestTranslation(self.currentSpeed)
-                if rStickY < 2 * lStickX and rStickY <= -2 * lStickX:
+                if rStickY < 2 * rStickX and rStickY <= -2 * rStickX:
                     self.southTranslation(self.currentSpeed)
-                if rStickY > -2 * lStickX and rStickY <= -0.5 * lStickX:
+                if rStickY > -2 * rStickX and rStickY <= -0.5 * rStickX:
                     self.southEastTranslation(self.currentSpeed)
-                if lStickY > 2 * lStickX and lStickY >= -2 * lStickX: #Lève le bras, stick gauche en haut
-                    self.raiseArm(30)
-                if lStickY < 2 * lStickX and lStickY <= -2 * lStickX: #Baisse le bras, stick gauche en bas                
-                    self.lowerArm(20)
-                if lStickY < 0.5 * lStickX and lStickY >= -0.5 * lStickX:
-                    self.clockwiseRotation(self.currentSpeed)
-                if lStickY < -0.5 * lStickX and lStickY >= 0.5 * lStickX:
-                    self.antiClockwiseRotation(self.currentSpeed)
+
+                # left
+                # if lStickY > 2 * lStickX and lStickY >= -2 * lStickX: #Lève le bras, stick gauche en haut
+                #     self.raiseArm(30)
+                # if lStickY < 2 * lStickX and lStickY <= -2 * lStickX: #Baisse le bras, stick gauche en bas                
+                #     self.lowerArm(20)
+                # if lStickY < 0.5 * lStickX and lStickY >= -0.5 * lStickX:
+                #     self.clockwiseRotation(self.currentSpeed)
+                # if lStickY < -0.5 * lStickX and lStickY >= 0.5 * lStickX:
+                #     self.antiClockwiseRotation(self.currentSpeed)
         
         # do stuff...
 
