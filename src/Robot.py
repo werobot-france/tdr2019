@@ -11,8 +11,8 @@ class Robot:
         'frontLeft': 6,
         'frontRight': 5,
         'backLeft': 0,
-        'backRight': 1,
-        'arm': 2
+        'backRight': 1
+        # 'arm': 2
     }
 
     pistonSlots = {
@@ -295,52 +295,56 @@ class Robot:
         if inputType == "analog":
             seuil = 0
 
-            agx = data['lStickX']
-            agy = -data['lStickY']
-            adx = data['rStickX']
-            ady = -data['rStickY']
-            al2 = data['l2'] #accélération
-            ar2 = data['r2'] #accélération
+            print('analog')
+
+            lStickX = data['lStickX'] - 127
+            lStickY = -(data['lStickY'] - 127)
+            rStickX = data['rStickX'] - 127
+            rStickY = -(data['rStickY'] - 127)
+            l2 = data['l2'] - 127 #accélération
+            r2 = data['r2'] - 127 #accélération
+
+            print([rStickX, rStickY])
             
-            if (abs(adx) <= seuil and 
-                abs(ady) <= seuil and 
-                abs(agx) <= seuil and 
-                abs(agy) <= seuil and
-                (abs(al2+1) <= seuil or
-                abs(al2) <= seuil) and
-                (abs(ar2+1) <= seuil or 
-                abs(ar2)<=seuil)):
+            if (abs(lStickX) <= seuil and 
+                abs(lStickY) <= seuil and 
+                abs(lStickX) <= seuil and 
+                abs(lStickY) <= seuil and
+                (abs(l2+1) <= seuil or
+                abs(l2) <= seuil) and
+                (abs(r2+1) <= seuil or 
+                abs(r2)<=seuil)):
                 self.stopAll()
             else:
-                if al2 == -1:
+                if lStickX == -1:
                     self.currentSpeed = self.minSpeed
-                elif al2 != 0 :
-                    self.currentSpeed = self.mappyt(al2, -1, 1, 0, 1) * 100
-                    #print("al2 = {0} et vt = {1}".format(al2,vt))
-                if ady < 0.5 * adx and ady >= -0.5 * adx:
+                elif lStickX != 0 :
+                    self.currentSpeed = self.mappyt(lStickX, -1, 1, 0, 1) * 100
+                    #print("lStickX = {0} et vt = {1}".format(lStickX,vt))
+                if rStickY < 0.5 * lStickX and rStickY >= -0.5 * lStickX:
                     self.eastTranslation(self.currentSpeed)
-                if ady > 0.5 * adx and ady <= 2 * adx:
+                if rStickY > 0.5 * lStickX and rStickY <= 2 * lStickX:
                     self.northEastTranslation(self.currentSpeed)
-                if ady > 2 * adx and ady >= -2 * adx:
+                if rStickY > 2 * lStickX and rStickY >= -2 * lStickX:
                     #print("ordre recu !")
                     self.northTranslation(self.currentSpeed)
-                if ady < -2* adx and ady >= -0.5 * adx:
+                if rStickY < -2* lStickX and rStickY >= -0.5 * lStickX:
                     self.northWestTranslation(self.currentSpeed)
-                if ady < -0.5 * adx and ady >= 0.5 * adx:
+                if rStickY < -0.5 * lStickX and rStickY >= 0.5 * lStickX:
                     self.westTranslation(self.currentSpeed)
-                if ady < 0.5 * adx and ady >= 2 * adx:
+                if rStickY < 0.5 * lStickX and rStickY >= 2 * lStickX:
                     self.southWestTranslation(self.currentSpeed)
-                if ady < 2 * adx and ady <= -2 * adx:
+                if rStickY < 2 * lStickX and rStickY <= -2 * lStickX:
                     self.southTranslation(self.currentSpeed)
-                if ady > -2 * adx and ady <= -0.5 * adx:
+                if rStickY > -2 * lStickX and rStickY <= -0.5 * lStickX:
                     self.southEastTranslation(self.currentSpeed)
-                if agy > 2 * agx and agy >= -2 * agx: #Lève le bras, stick gauche en haut
+                if lStickY > 2 * lStickX and lStickY >= -2 * lStickX: #Lève le bras, stick gauche en haut
                     self.raiseArm(30)
-                if agy < 2 * agx and agy <= -2 * agx: #Baisse le bras, stick gauche en bas                
+                if lStickY < 2 * lStickX and lStickY <= -2 * lStickX: #Baisse le bras, stick gauche en bas                
                     self.lowerArm(20)
-                if agy < 0.5 * agx and agy >= -0.5 * agx:
+                if lStickY < 0.5 * lStickX and lStickY >= -0.5 * lStickX:
                     self.clockwiseRotation(self.currentSpeed)
-                if agy < -0.5 * agx and agy >= 0.5 * agx:
+                if lStickY < -0.5 * lStickX and lStickY >= 0.5 * lStickX:
                     self.antiClockwiseRotation(self.currentSpeed)
         
         # do stuff...
@@ -368,12 +372,12 @@ class Robot:
 
         print('Pistons successfuly initialized')
 
-        self.initArm()
+        # self.initArm()
 
         print('Arm successfuly initialized')
 
-        self.armBaseGoTo(self.armPositions['base']['down'])
-        self.armClawGoTo(self.armPositions['claw']['opened'], v = 70)
+        # self.armBaseGoTo(self.armPositions['base']['down'])
+        # self.armClawGoTo(self.armPositions['claw']['opened'], v = 70)
 
         # print('Starting controller service...')
 

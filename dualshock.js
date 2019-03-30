@@ -33,10 +33,10 @@ let analog = JSON.stringify({
     rStickY: 127,
     l2: 0,
     r2: 0,
-    t1X: 180,
-    t1Y: 639,
-    t2X: 0,
-    t2Y: 0
+    // t1X: 180,
+    // t1Y: 639,
+    // t2X: 0,
+    // t2Y: 0
 })
 
 ws.on('open', function open() {
@@ -58,6 +58,8 @@ ws.on('open', function open() {
                 d: device
             }))
 
+            let ignoredIndex = ["t1X", "t1Y", "t2X", "t2Y"]
+
             gamepad.onmotion = true;
             gamepad.onstatus = true;
             gamepad.onupdate = function () {
@@ -69,7 +71,15 @@ ws.on('open', function open() {
                         d: this.digital
                     }))
                 }
-                if (JSON.stringify(this.analog) != analog) {
+                let analogRaw = {
+                    lStickX: this.analog.lStickX,
+                    lStickY: this.analog.lStickY,
+                    rStickX: this.analog.rStickX,
+                    rStickY: this.analog.rStickY,
+                    l2: this.analog.l2,
+                    r2: this.analog.r2
+                }
+                if (JSON.stringify(analogRaw) != analog) {
                     analog = JSON.stringify(this.analog)
                     ws.send(JSON.stringify({
                         t: 'input',
