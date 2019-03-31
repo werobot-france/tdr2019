@@ -1,7 +1,7 @@
-const WebSocket = require('ws');
+// const WebSocket = require('ws');
 const Dualshock = require('dualshock')
 
-const ws = new WebSocket('ws://localhost:8000');
+// const ws = new WebSocket('ws://localhost:8000');
 
 let digital = JSON.stringify({
     a: false,
@@ -39,88 +39,92 @@ let analog = JSON.stringify({
     // t2Y: 0
 })
 
-ws.on('open', function open() {
-    ws.send(JSON.stringify({ t: 'init' }))
-    function connect() {
-        let devicesList = Dualshock.getDevices();
-        if (devicesList.length != 0) {
+// ws.on('open', function open() {
+//     ws.send(JSON.stringify({ t: 'init' }))
+//     
+// });
 
-            let device = devicesList[0]
-            let gamepad = Dualshock.open(device, {
-                smoothAnalog: 10,
-                smoothMotion: 15,
-                joyDeadband: 4,
-                moveDeadband: 4
-            })
+// ws.on('close', function close() {
+//     console.log('> disconnected');
+// });
 
-            ws.send(JSON.stringify({
-                t: 'detection',
-                d: device
-            }))
+function connect() {
+    let devicesList = Dualshock.getDevices();
+    if (devicesList.length != 0) {
 
-            let ignoredIndex = ["t1X", "t1Y", "t2X", "t2Y"]
+        let device = devicesList[0]
+        let gamepad = Dualshock.open(device, {
+            smoothAnalog: 10,
+            smoothMotion: 15,
+            joyDeadband: 4,
+            moveDeadband: 4
+        })
 
-            gamepad.onmotion = true;
-            gamepad.onstatus = true;
-            gamepad.onupdate = function () {
-                if (JSON.stringify(this.digital) != digital) {
-                    digital = JSON.stringify(this.digital)
-                    ws.send(JSON.stringify({
-                        t: 'input',
-                        i: 'digital',
-                        d: this.digital
-                    }))
-                }
-                let analogRaw = {
-                    lStickX: this.analog.lStickX,
-                    lStickY: this.analog.lStickY,
-                    rStickX: this.analog.rStickX,
-                    rStickY: this.analog.rStickY,
-                    l2: this.analog.l2,
-                    r2: this.analog.r2
-                }
-                if (JSON.stringify(analogRaw) != analog) {
-                    analog = JSON.stringify(analogRaw)
-                    ws.send(JSON.stringify({
-                        t: 'input',
-                        i: 'analog',
-                        d: this.analog
-                    }))
-                }                
-            }
+        console.log(JSON.stringify({
+            t: 'detection',
+            d: device
+        }))
 
-            // gamepad.ondigital = function (button, value) {
-            //     ws.send(JSON.stringify({
-            //         t: 'input',
-            //         d: [button, value]
-            //     }))
-            // }
-            // gamepad.onanalog = function (axis, value) {
-            //     ws.send(JSON.stringify({
-            //         t: 'input',
-            //         d: [axis, value]
-            //     }))
-            // }
-            gamepad.ondisconnect = function () {
-                connect()
-                ws.send(JSON.stringify({
-                    t: 'disconnection'
+        let ignoredIndex = ["t1X", "t1Y", "t2X", "t2Y"]
+
+        gamepad.onmotion = false;
+        gamepad.onstatus = false;
+        gamepad.onupdate = function () {
+            if (JSON.stringify(this.digital) != digital) {
+                digital = JSON.stringify(this.digital)
+                console.log(JSON.stringify({
+                    t: 'input',
+                    i: 'digital',
+                    d: this.digital
                 }))
             }
-            ws.on('message', (data) => {
-                let body = JSON.parse(data)
-                if (body.t == 'led') {
-                    gamepad.setLed(body.d[0], body.d[1], body.d[2])
-                }
-            })
-            return true
-        } else {
-            setTimeout(connect, 2000)
+            let analogRaw = {
+                lStickX: this.analog.lStickX,
+                lStickY: this.analog.lStickY,
+                rStickX: this.analog.rStickX,
+                rStickY: this.analog.rStickY,
+                l2: this.analog.l2,
+                r2: this.analog.r2
+            }
+            if (JSON.stringify(analogRaw) != analog) {
+                //console.log((new Date()).toString() + ' > send analog')
+                analog = JSON.stringify(analogRaw)
+                console.log(JSON.stringify({
+                    t: 'input',
+                    i: 'analog',
+                    d: this.analog
+                }))
+            }
         }
-    }
-    connect()
-});
 
-ws.on('close', function close() {
-    console.log('> disconnected');
-});
+        // gamepad.ondigital = function (button, value) {
+        //     ws.send(JSON.stringify({
+        //         t: 'input',
+        //         d: [button, value]
+        //     }))
+        // }
+        // gamepad.onanalog = function (axis, value) {
+        //     ws.send(JSON.stringify({
+        //         t: 'input',
+        //         d: [axis, value]
+        //     }))
+        // }
+        gamepad.ondisconnect = function () {
+            connect()
+            
+            console.log(JSON.stringify({
+                t: 'disconnection'
+            }))
+        }
+        // ws.on('message', (data) => {
+        //     let body = JSON.parse(data)
+        //     if (body.t == 'led') {
+        //         gamepad.setLed(body.d[0], body.d[1], body.d[2])
+        //     }
+        // })
+        return true
+    } else {
+        setTimeout(connect, 2000)
+    }
+}
+connect()
